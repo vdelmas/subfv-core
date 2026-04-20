@@ -11,6 +11,7 @@ module mesh_geometry_module
   public :: odd_even
   public :: project_sol
   public :: project_sol_box
+  public :: mpi_project_sol_box
 contains
 
   subroutine compute_geometry_mesh(mesh, use_sub_entities, b2d)
@@ -832,4 +833,248 @@ contains
       end do
     end do
   end subroutine find_if_vert_is_bound
+
+  subroutine mpi_project_sol_box(sol_size, mesh1, sol1, mesh2, sol2)
+    use mpi
+    use omp_lib
+    implicit none
+
+    integer(kind=ENTIER) :: sol_size
+    type(mesh_type), intent(in) :: mesh1, mesh2
+    real(kind=DOUBLE), dimension(sol_size, mesh1%n_elems), intent(in) :: sol1
+    real(kind=DOUBLE), dimension(sol_size, mesh2%n_elems), intent(inout) :: sol2
+
+    type :: box_type
+      integer(kind=ENTIER), dimension(:), allocatable :: elem
+      real(kind=DOUBLE), dimension(:,:), allocatable :: coord
+      real(kind=DOUBLE), dimension(:,:), allocatable :: sol
+    end type box_type
+
+    real(kind=DOUBLE), parameter :: r_per_box = 5.0_DOUBLE
+
+    integer(kind=ENTIER) :: me, num_procs, p, mpi_ierr
+    integer(kind=ENTIER) :: i, nx, ny, nz, ix, iy, iz, iclosest, j
+    integer(kind=ENTIER) :: kx, ky, kz, idbx, idby, idbz
+    real(kind=DOUBLE) :: xmin, xmax, ymin, ymax, zmin, zmax
+    real(kind=DOUBLE) :: r, tot_vol, dx, dy, dz, d1
+    real(kind=DOUBLE) :: dx_current, dy_current, dz_current
+    integer(kind=ENTIER), dimension(:, :, :), allocatable :: n_box
+    type(box_type), dimension(:, :, :), allocatable :: box
+    real(kind=double), dimension(mesh2%n_elems) :: d_closest
+
+    real(kind=DOUBLE) :: t1, t2
+    real(kind=DOUBLE) :: xmin_current, xmax_current, &
+      ymin_current, ymax_current, &
+      zmin_current, zmax_current
+    integer(kind=ENTIER) :: nx_current, ny_current, nz_current
+    integer(kind=ENTIER), dimension(:, :, :), allocatable :: n_box_current
+    type(box_type), dimension(:, :, :), allocatable :: box_current
+
+    real(kind=double), dimension(3, 5, mesh2%n_elems) :: grad
+    real(kind=double), dimension(mesh2%n_elems) :: residu
+    integer(kind=ENTIER), dimension(mesh2%n_elems) :: color
+    character(len=255) :: me_str
+
+    logical :: found
+
+    sol2 = -1.
+    grad = 0.
+    residu = 0.
+    color = 0
+
+    t1 = omp_get_wtime()
+
+    xmin = mesh1%elem(1)%coord(1)
+    xmax = mesh1%elem(1)%coord(1)
+    ymin = mesh1%elem(1)%coord(2)
+    ymax = mesh1%elem(1)%coord(2)
+    zmin = mesh1%elem(1)%coord(3)
+    zmax = mesh1%elem(1)%coord(3)
+
+    tot_vol = 0.0_DOUBLE
+    do i = 1, mesh1%n_elems
+      if (mesh1%elem(i)%coord(1) < xmin) xmin = mesh1%elem(i)%coord(1)
+      if (mesh1%elem(i)%coord(1) > xmax) xmax = mesh1%elem(i)%coord(1)
+      if (mesh1%elem(i)%coord(2) < ymin) ymin = mesh1%elem(i)%coord(2)
+      if (mesh1%elem(i)%coord(2) > ymax) ymax = mesh1%elem(i)%coord(2)
+      if (mesh1%elem(i)%coord(3) < zmin) zmin = mesh1%elem(i)%coord(3)
+      if (mesh1%elem(i)%coord(3) > zmax) zmax = mesh1%elem(i)%coord(3)
+      tot_vol = tot_vol + mesh1%elem(i)%volume
+    end do
+
+    r = (tot_vol/mesh1%n_elems)**(1.0_DOUBLE/3.0_DOUBLE)
+
+    xmin = xmin - r
+    xmax = xmax + r
+    ymin = ymin - r
+    ymax = ymax + r
+    zmin = zmin - r
+    zmax = zmax + r
+
+    if (xmax - xmin < r) then
+      dx = xmax - xmin
+    else
+      dx = r_per_box*r
+    end if
+    nx = ceiling((xmax - xmin)/dx)+1
+
+    if (ymax - ymin < r) then
+      dy = ymax - ymin
+    else
+      dy = r_per_box*r
+    end if
+    ny = ceiling((ymax - ymin)/dy)+1
+
+    if (zmax - zmin < r) then
+      dz = zmax - zmin
+    else
+      dz = r_per_box*r
+    end if
+    nz = ceiling((zmax - zmin)/dz)+1
+
+    allocate (n_box(nx, ny, nz))
+    n_box = 0
+    do i = 1, mesh1%n_elems
+      ix = ceiling((mesh1%elem(i)%coord(1) - xmin)/dx)
+      iy = ceiling((mesh1%elem(i)%coord(2) - ymin)/dy)
+      iz = ceiling((mesh1%elem(i)%coord(3) - zmin)/dz)
+      n_box(ix, iy, iz) = n_box(ix, iy, iz) + 1
+    end do
+
+    allocate (box(nx, ny, nz))
+    do ix = 1, nx
+      do iy = 1, ny
+        do iz = 1, nz
+          if (n_box(ix, iy, iz) > 0) then
+            allocate (box(ix, iy, iz)%elem(n_box(ix, iy, iz)))
+            box(ix, iy, iz)%elem = 0
+            allocate (box(ix, iy, iz)%sol(sol_size, n_box(ix, iy, iz)))
+            box(ix, iy, iz)%sol = 0
+            allocate (box(ix, iy, iz)%coord(3, n_box(ix, iy, iz)))
+            box(ix, iy, iz)%coord = 0
+          end if
+        end do
+      end do
+    end do
+
+    n_box = 0
+    do i = 1, mesh1%n_elems
+      ix = ceiling((mesh1%elem(i)%coord(1) - xmin)/dx)
+      iy = ceiling((mesh1%elem(i)%coord(2) - ymin)/dy)
+      iz = ceiling((mesh1%elem(i)%coord(3) - zmin)/dz)
+      n_box(ix, iy, iz) = n_box(ix, iy, iz) + 1
+      box(ix, iy, iz)%elem(n_box(ix, iy, iz)) = i
+      box(ix, iy, iz)%sol(:, n_box(ix, iy, iz)) = sol1(:, i)
+      box(ix, iy, iz)%coord(:, n_box(ix, iy, iz)) = mesh1%elem(i)%coord
+    end do
+
+    !MPI
+    sol2 = 0.0_DOUBLE
+    call MPI_COMM_SIZE(MPI_COMM_WORLD, num_procs, mpi_ierr)
+    call MPI_COMM_RANK(MPI_COMM_WORLD, me, mpi_ierr)
+
+    d_closest = 1e10
+
+    do p=0, num_procs-1
+      if( p == me ) then
+        print*, "Proj from", me
+        xmin_current = xmin
+        xmax_current = xmax
+        ymin_current = ymin
+        ymax_current = ymax
+        zmin_current = zmin
+        zmax_current = zmax
+        nx_current = nx
+        ny_current = ny
+        nz_current = nz
+        dx_current = dx
+        dy_current = dy
+        dz_current = dz
+      end if
+
+      call mpi_bcast(xmin_current, 1, MPI_DOUBLE, p, MPI_COMM_WORLD, mpi_ierr)
+      call mpi_bcast(xmax_current, 1, MPI_DOUBLE, p, MPI_COMM_WORLD, mpi_ierr)
+      call mpi_bcast(ymin_current, 1, MPI_DOUBLE, p, MPI_COMM_WORLD, mpi_ierr)
+      call mpi_bcast(ymax_current, 1, MPI_DOUBLE, p, MPI_COMM_WORLD, mpi_ierr)
+      call mpi_bcast(zmin_current, 1, MPI_DOUBLE, p, MPI_COMM_WORLD, mpi_ierr)
+      call mpi_bcast(zmax_current, 1, MPI_DOUBLE, p, MPI_COMM_WORLD, mpi_ierr)
+      call mpi_bcast(dx_current, 1, MPI_DOUBLE, p, MPI_COMM_WORLD, mpi_ierr)
+      call mpi_bcast(dy_current, 1, MPI_DOUBLE, p, MPI_COMM_WORLD, mpi_ierr)
+      call mpi_bcast(dz_current, 1, MPI_DOUBLE, p, MPI_COMM_WORLD, mpi_ierr)
+      call mpi_bcast(nx_current, 1, MPI_INT, p, MPI_COMM_WORLD, mpi_ierr)
+      call mpi_bcast(ny_current, 1, MPI_INT, p, MPI_COMM_WORLD, mpi_ierr)
+      call mpi_bcast(nz_current, 1, MPI_INT, p, MPI_COMM_WORLD, mpi_ierr)
+      allocate (n_box_current(nx_current, ny_current, nz_current))
+      if( me == p ) n_box_current = n_box
+      call mpi_bcast(n_box_current, nx_current*ny_current*nz_current, &
+        MPI_INT, p, MPI_COMM_WORLD, mpi_ierr)
+
+      allocate (box_current(nx_current, ny_current, nz_current))
+      do ix = 1, nx_current
+        do iy = 1, ny_current
+          do iz = 1, nz_current
+            if (n_box_current(ix, iy, iz) > 0) then
+              allocate (box_current(ix, iy, iz)%elem(n_box_current(ix, iy, iz)))
+              if( me == p ) box_current(ix, iy, iz)%elem = box(ix, iy, iz)%elem
+              call mpi_bcast(box_current(ix,iy,iz)%elem, n_box_current(ix,iy,iz), &
+                MPI_INT, p, MPI_COMM_WORLD, mpi_ierr)
+              allocate (box_current(ix, iy, iz)%sol(sol_size, n_box_current(ix, iy, iz)))
+              if( me == p ) box_current(ix, iy, iz)%sol = box(ix, iy, iz)%sol
+              call mpi_bcast(box_current(ix,iy,iz)%sol, sol_size*n_box_current(ix,iy,iz), &
+                MPI_DOUBLE, p, MPI_COMM_WORLD, mpi_ierr)
+              allocate (box_current(ix, iy, iz)%coord(3, n_box_current(ix, iy, iz)))
+              if( me == p ) box_current(ix, iy, iz)%coord = box(ix, iy, iz)%coord
+              call mpi_bcast(box_current(ix,iy,iz)%coord, 3*n_box_current(ix,iy,iz), &
+                MPI_DOUBLE, p, MPI_COMM_WORLD, mpi_ierr)
+            end if
+          end do
+        end do
+      end do
+
+      do i = 1, mesh2%n_elems
+        if( mesh2%elem(i)%coord(1) > xmin_current .and. &
+          mesh2%elem(i)%coord(1) < xmax_current .and.&
+          mesh2%elem(i)%coord(2) > ymin_current .and. &
+          mesh2%elem(i)%coord(2) < ymax_current .and.&
+          mesh2%elem(i)%coord(3) > zmin_current .and. &
+          mesh2%elem(i)%coord(3) < zmax_current ) then
+
+          ix = ceiling((mesh2%elem(i)%coord(1) - xmin_current)/dx_current)
+          iy = ceiling((mesh2%elem(i)%coord(2) - ymin_current)/dy_current)
+          iz = ceiling((mesh2%elem(i)%coord(3) - zmin_current)/dz_current)
+
+          found = .false.
+          iclosest = 0
+          do kx = 1, 5
+            do ky = 1, 5
+              do kz = 1, 5
+                idbx = min(max(1, ix + kx - 3), nx_current)
+                idby = min(max(1, iy + ky - 3), ny_current)
+                idbz = min(max(1, iz + kz - 3), nz_current)
+                do j = 1, n_box_current(idbx, idby, idbz)
+                  d1 = norm2(mesh2%elem(i)%coord &
+                    - box_current(idbx, idby, idbz)%coord(:, j))
+                  if (d1 < d_closest(i)) then
+                    iclosest = box_current(idbx, idby, idbz)%elem(j)
+                    sol2(:, i) = box_current(idbx, idby, idbz)%sol(:, j)
+                    d_closest(i) = d1
+                    found = .true.
+                  end if
+                end do
+              end do
+            end do
+          end do
+
+        end if !bounding box
+      end do
+      deallocate (n_box_current, box_current)
+      call mpi_barrier(mpi_comm_world, mpi_ierr)
+    end do
+
+    call mpi_barrier(mpi_comm_world, mpi_ierr)
+    t2 = omp_get_wtime()
+    if( me == 0 ) then
+      print *, ""//achar(27)//"[33m[*] Time for projection onto next mesh :"//achar(27)//"[0m", t2 - t1
+    end if
+  end subroutine mpi_project_sol_box
 end module mesh_geometry_module
