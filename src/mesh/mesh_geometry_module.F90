@@ -836,7 +836,6 @@ contains
 
   subroutine mpi_project_sol_box(sol_size, mesh1, sol1, mesh2, sol2)
     use mpi
-    use omp_lib
     implicit none
 
     integer(kind=ENTIER) :: sol_size
@@ -882,7 +881,7 @@ contains
     residu = 0.
     color = 0
 
-    t1 = omp_get_wtime()
+    call cpu_time(t1)
 
     xmin = mesh1%elem(1)%coord(1)
     xmax = mesh1%elem(1)%coord(1)
@@ -1072,7 +1071,7 @@ contains
     end do
 
     call mpi_barrier(mpi_comm_world, mpi_ierr)
-    t2 = omp_get_wtime()
+    call cpu_time(t2)
     if( me == 0 ) then
       print *, ""//achar(27)//"[33m[*] Time for projection onto next mesh :"//achar(27)//"[0m", t2 - t1
     end if
