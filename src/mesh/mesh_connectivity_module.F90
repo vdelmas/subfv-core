@@ -9,12 +9,12 @@ module mesh_connectivity_module
   public :: build_mesh
 contains
 
-  subroutine build_mesh(mesh, num_procs, mpi_send_recv, reduced_neigh, use_sub_entities, b2d)
+  subroutine build_mesh(mesh, num_procs, mpi_send_recv, use_sub_entities, b2d)
     use mpi_module
     implicit none
 
     type(mesh_type), intent(inout) :: mesh
-    integer, intent(in) :: num_procs, reduced_neigh
+    integer, intent(in) :: num_procs
     type(mpi_send_recv_type), intent(inout) :: mpi_send_recv
     logical, intent(in) :: use_sub_entities, b2d
 
@@ -29,7 +29,7 @@ contains
     if (use_sub_entities) call build_loc_id_sub_faces(mesh)
     call compute_elem_tag(mesh)
     if (use_sub_entities) call compute_n_max_sub_faces_around_node(mesh)
-    call compute_neigh_by_vert(mesh, reduced_neigh)
+    call compute_neigh_by_vert(mesh)
     if (num_procs > 1) call compute_ghost_vert(mesh)
     call find_if_vert_is_bound(mesh, b2d)
   end subroutine build_mesh
@@ -597,11 +597,10 @@ contains
     end do
   end subroutine compute_n_max_sub_faces_around_node
 
-  subroutine compute_neigh_by_vert(mesh, reduced_neigh)
+  subroutine compute_neigh_by_vert(mesh)
     implicit none
 
     type(mesh_type), intent(inout) :: mesh
-    integer(kind=ENTIER), intent(in) :: reduced_neigh
 
     integer(kind=ENTIER) :: i, j, k, iloc, id_vert, n_neigh_by_vert, id_face
     integer(kind=ENTIER), dimension(:), allocatable :: temp_neigh_by_vert
@@ -653,51 +652,6 @@ contains
           iloc = iloc + 1
         end if
       end do
-
-      !Make a reduced neighbor vector for reconstruction
-      allocate (mesh%elem(i)%reduced_neigh_by_vert(reduced_neigh))
-      if (mesh%elem(i)%n_faces > reduced_neigh) then
-        print *, "Not enough neighbors for reconstruction (max_size_mat_reduced)"
-        error stop
-      end if
-
-      if (mesh%elem(i)%n_neigh_by_vert <= reduced_neigh) then
-        mesh%elem(i)%reduced_neigh_by_vert(:) = mesh%elem(i)%neigh_by_vert(:mesh%elem(i)%n_neigh_by_vert)
-      else
-        j = 1
-
-        !First take neighbors by the faces
-        do k = 1, mesh%elem(i)%n_faces
-          id_face = mesh%elem(i)%face(k)
-          if (mesh%face(id_face)%left_neigh == i) then
-            if (mesh%face(id_face)%right_neigh > 0) then
-              mesh%elem(i)%reduced_neigh_by_vert(j) = mesh%face(id_face)%right_neigh
-              j = j + 1
-            end if
-          else
-            mesh%elem(i)%reduced_neigh_by_vert(j) = mesh%face(id_face)%left_neigh
-            j = j + 1
-          end if
-        end do
-
-        !Then pick random neighbors
-        do while (j <= reduced_neigh)
-          call random_number(rn)
-          iloc = 1 + int(rn*mesh%elem(i)%n_neigh_by_vert)
-
-          already_added = .FALSE.
-          do k = 1, j - 1
-            if (mesh%elem(i)%reduced_neigh_by_vert(k) == mesh%elem(i)%neigh_by_vert(iloc)) then
-              already_added = .TRUE.
-            end if
-          end do
-
-          if (.not. already_added) then
-            mesh%elem(i)%reduced_neigh_by_vert(j) = mesh%elem(i)%neigh_by_vert(iloc)
-            j = j + 1
-          end if
-        end do
-      end if
 
       deallocate (temp_neigh_by_vert)
     end do

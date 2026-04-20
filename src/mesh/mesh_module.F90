@@ -59,7 +59,7 @@ module mesh_module
     integer(kind=ENTIER) :: n_vert, n_faces, n_sub_faces, n_sub_elems, elem_kind, tag = -1
     integer(kind=ENTIER) :: n_neigh_by_vert
     integer(kind=ENTIER), dimension(:), allocatable :: vert, face, sub_face, sub_elem
-    integer(kind=ENTIER), dimension(:), allocatable :: neigh_by_vert, reduced_neigh_by_vert
+    integer(kind=ENTIER), dimension(:), allocatable :: neigh_by_vert
     real(kind=DOUBLE) :: volume
     real(kind=DOUBLE), dimension(3) :: coord
     logical :: is_ghost = .FALSE.
