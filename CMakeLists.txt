@@ -20,6 +20,8 @@ add_library(subfvcore
   src/linear_algebra/sparse_csr_linear_module.F90
   src/linear_algebra/sparse_bcsr_linear_module.F90
   src/linear_algebra/linear_solver_module.F90
+
+  src/io/io_module.F90
 )
 
 set_target_properties(subfvcore PROPERTIES
