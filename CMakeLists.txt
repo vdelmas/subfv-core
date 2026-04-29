@@ -7,21 +7,21 @@ find_package(BLAS REQUIRED)
 find_package(LAPACK REQUIRED)
 
 add_library(subfvcore
-  src/utils/precision_module.F90
+  src/utils/subfv_precision_module.F90
 
-  src/mpi/mpi_module.F90
+  src/mpi/subfv_mpi_module.F90
 
-  src/mesh/mesh_module.F90
-  src/mesh/mesh_reading_module.F90
-  src/mesh/mesh_geometry_module.F90
-  src/mesh/mesh_connectivity_module.F90
+  src/mesh/subfv_mesh_module.F90
+  src/mesh/subfv_mesh_reading_module.F90
+  src/mesh/subfv_mesh_geometry_module.F90
+  src/mesh/subfv_mesh_connectivity_module.F90
 
-  src/linear_algebra/sparse_linear_module.F90
-  src/linear_algebra/sparse_csr_linear_module.F90
-  src/linear_algebra/sparse_bcsr_linear_module.F90
-  src/linear_algebra/linear_solver_module.F90
+  src/linear_algebra/subfv_sparse_linear_module.F90
+  src/linear_algebra/subfv_sparse_csr_linear_module.F90
+  src/linear_algebra/subfv_sparse_bcsr_linear_module.F90
+  src/linear_algebra/subfv_linear_solver_module.F90
 
-  src/io/io_module.F90
+  src/io/subfv_io_module.F90
 )
 
 set_target_properties(subfvcore PROPERTIES

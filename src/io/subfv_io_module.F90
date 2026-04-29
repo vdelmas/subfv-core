@@ -1,10 +1,10 @@
-module io_module
+module subfv_io_module
   implicit none
 contains
   subroutine write_file_vtu_start_cell_data(mesh, filename, fn_vtu, fn_pvtu)
     use mpi
-    use mpi_module
-    use mesh_module
+    use subfv_mpi_module
+    use subfv_mesh_module
     implicit none
 
     type(mesh_type) :: mesh
@@ -30,8 +30,8 @@ contains
 
   subroutine write_file_vtu_end_cell_data(mesh, filename, fn_vtu, fn_pvtu)
     use mpi
-    use mpi_module
-    use mesh_module
+    use subfv_mpi_module
+    use subfv_mesh_module
     implicit none
 
     type(mesh_type) :: mesh
@@ -57,8 +57,8 @@ contains
 
   subroutine write_file_vtu_cell_scalar(mesh, filename, fn_vtu, fn_pvtu, data, name)
     use mpi
-    use mpi_module
-    use mesh_module
+    use subfv_mpi_module
+    use subfv_mesh_module
     implicit none
 
     type(mesh_type) :: mesh
@@ -93,8 +93,8 @@ contains
 
   subroutine write_file_vtu_cell_vector(mesh, filename, fn_vtu, fn_pvtu, data, name)
     use mpi
-    use mpi_module
-    use mesh_module
+    use subfv_mpi_module
+    use subfv_mesh_module
     implicit none
 
     type(mesh_type) :: mesh
@@ -129,8 +129,8 @@ contains
 
   subroutine write_file_vtu_start_vert_data(mesh, filename, fn_vtu, fn_pvtu)
     use mpi
-    use mpi_module
-    use mesh_module
+    use subfv_mpi_module
+    use subfv_mesh_module
     implicit none
 
     type(mesh_type) :: mesh
@@ -156,8 +156,8 @@ contains
 
   subroutine write_file_vtu_end_vert_data(mesh, filename, fn_vtu, fn_pvtu)
     use mpi
-    use mpi_module
-    use mesh_module
+    use subfv_mpi_module
+    use subfv_mesh_module
     implicit none
 
     type(mesh_type) :: mesh
@@ -183,8 +183,8 @@ contains
 
   subroutine write_file_vtu_vert_scalar(mesh, filename, fn_vtu, fn_pvtu, data, name)
     use mpi
-    use mpi_module
-    use mesh_module
+    use subfv_mpi_module
+    use subfv_mesh_module
     implicit none
 
     type(mesh_type) :: mesh
@@ -219,8 +219,8 @@ contains
 
   subroutine write_file_vtu_vert_vector(mesh, filename, fn_vtu, fn_pvtu, data, name)
     use mpi
-    use mpi_module
-    use mesh_module
+    use subfv_mpi_module
+    use subfv_mesh_module
     implicit none
 
     type(mesh_type) :: mesh
@@ -255,8 +255,8 @@ contains
 
   subroutine open_file_vtu(mesh, filename, fn_vtu, fn_pvtu)
     use mpi
-    use mpi_module
-    use mesh_module
+    use subfv_mpi_module
+    use subfv_mesh_module
     implicit none
 
     type(mesh_type) :: mesh
@@ -435,8 +435,8 @@ contains
 
   subroutine close_file_vtu(mesh, filename, fn_vtu, fn_pvtu)
     use mpi
-    use mpi_module
-    use mesh_module
+    use subfv_mpi_module
+    use subfv_mesh_module
     implicit none
 
     type(mesh_type) :: mesh
@@ -469,4 +469,4 @@ contains
     write(fn_vtu, *) "</VTKFile>"
     close(fn_vtu)
   end subroutine close_file_vtu
-end module io_module
+end module subfv_io_module
