@@ -60,6 +60,9 @@ program main
     sol(:, i) = prim_to_cons(w)
   end do
 
+  if (num_procs > 1) call mpi_memory_exchange(mpi_send_recv, &
+    mesh%n_elems, 5, sol)
+
   w(1) = 1.4_DOUBLE
   w(2:4) = (/0.0_DOUBLE, -20.0_DOUBLE, 0.0_DOUBLE/)
   w(5) = 1.0_DOUBLE
@@ -68,6 +71,7 @@ program main
   t = 0.0_DOUBLE
   tmax = 1.0_DOUBLE
   do while ( t < tmax ) 
+
     dt = 1e10_DOUBLE
     rhs = 0.0_DOUBLE
     do i=1, mesh%n_faces
@@ -104,7 +108,11 @@ program main
       end if
     end do
 
+    if( num_procs > 1 ) call mpi_allreduce(MPI_IN_PLACE, &
+      dt, 1, MPI_DOUBLE, MPI_MIN, MPI_COMM_WORLD, mpi_ierr)
     sol = sol + dt * rhs
+    if (num_procs > 1) call mpi_memory_exchange(mpi_send_recv, &
+      mesh%n_elems, 5, sol)
     t = t + dt
   end do
 
