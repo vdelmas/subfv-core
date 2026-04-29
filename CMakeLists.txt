@@ -78,3 +78,18 @@ install(FILES
   "${CMAKE_CURRENT_BINARY_DIR}/subfvcoreConfigVersion.cmake"
   DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/subfvcore
 )
+
+# =========================
+# Examples
+# =========================
+
+option(BUILD_EXAMPLES "Build examples" ON)
+
+if(BUILD_EXAMPLES)
+  add_subdirectory(examples)
+endif()
+
+# Installer les exemples
+install(DIRECTORY examples/
+  DESTINATION ${CMAKE_INSTALL_DATADIR}/subfvcore/examples
+)
