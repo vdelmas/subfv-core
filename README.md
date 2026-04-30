@@ -103,42 +103,43 @@ set(subfvcore_DIR $HOME/.local/lib/cmake/subfvcore)
 
 ## Project Structure
 
+Sources
     src/ core library source code
     src/io/ input output utilities
     src/mesh mesh handling geometry connectivity reading
     src/mpi MPI abstraction layer
-    src/linear algebra sparse solvers and algebra
+    src/linear_algebra sparse solvers and algebra
     src/utils precision and helper tools
 
+Examples
     examples/ examples of usage
     example1 serial case to check the mesh reading
     example2 simple Rusanov Euler code for Mach 20 half cylinder
 
+Tools
     tools utilities 
     tools/scripts scripts 
 
 ## Module Overview
 
-    Mesh modules
-    subfv mesh module
-    subfv mesh geometry module
-    subfv mesh connectivity module
-    subfv mesh reading module
+Mesh modules
+    subfv_mesh_module
+    subfv_mesh_geometry module
+    subfv_mesh_connectivity module
+    subfv_mesh_reading module
 
-    Linear algebra modules
-    subfv sparse linear module
-    subfv sparse csr linear module
-    subfv sparse bcsr linear module
-    subfv linear solver module
+Linear algebra modules
+    subfv_sparse_linear_module
+    subfv_sparse_csr_linear_module
+    subfv_sparse_bcsr_linear_module
+    subfv_linear_solver module
 
-    MPI
-    subfv mpi module
+MPI
+    subfv mpi_module
 
-    Utilities
-    subfv io module
-    subfv precision module
-
-    ---
+Utilities
+    subfv io_module
+    subfv precision_module
 
 ## Cleaning Build
 
@@ -147,13 +148,6 @@ set(subfvcore_DIR $HOME/.local/lib/cmake/subfvcore)
     cd build
     cmake ..
     make
-
-    Remove artifacts
-
-    find . name .o delete
-    find . name .mod delete
-
-    ---
 
 ## Visualization
 
