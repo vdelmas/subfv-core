@@ -83,6 +83,7 @@ export CMAKE_PREFIX_PATH=$HOME/.local:$CMAKE_PREFIX_PATH
 In CMakeLists.txt
 ```bash
 find_package subfvcore REQUIRED
+```
 
 If not found automatically 
 ```bash
