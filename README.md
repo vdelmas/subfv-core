@@ -7,22 +7,34 @@ Subface based Finite Volume core library written in Fortran built with CMake.
 - Fortran compiler gfortran ifort etc
 - CMake greater or equal 3.20
 - MPI implementation OpenMPI or MPICH for parallel features
+- BLAS & LAPACK
 - Gmsh optional
 - Paraview optional
 
+Install all with
+```bash
+sudo apt update && sudo apt install -y cmake gfortran openmpi-bin libopenmpi-dev libblas-dev liblapack-dev gmsh paraview
+```
+
 ## Configure Build
 
+```bash
 mkdir build
 cd build
 cmake ..
+```
 
 If MPI is not automatically detected
 
+```bash
 cmake .. -DMPI_Fortran_COMPILER=mpif90
+```
 
 You can also set the compiler explicitly
 
+```bash
 cmake .. -DCMAKE_Fortran_COMPILER=gfortran
+```
 
 CMake will generate
 - Makefiles
@@ -31,7 +43,9 @@ CMake will generate
 
 ## Compile
 
+```bash
 make -j
+```
 
 This builds
 - libsubfvcore.a
@@ -42,9 +56,11 @@ This builds
 
 Recommended local installation no sudo required
 
+```bash
 cmake .. -DCMAKE_INSTALL_PREFIX=$HOME/.local
 make -j
 make install
+```
 
 This installs
 - libsubfvcore.a
@@ -56,50 +72,56 @@ This installs
 
 Add this to your shell configuration file bashrc or zshrc
 
+```bash
 export PATH=$HOME/.local/bin:$PATH
 export LD_LIBRARY_PATH=$HOME/.local/lib:$LD_LIBRARY_PATH
 export CMAKE_PREFIX_PATH=$HOME/.local:$CMAKE_PREFIX_PATH
+```
 
 ## Using the library in your project
 
-In CMake
-
+In CMakeLists.txt
+```bash
 find_package subfvcore REQUIRED
 
-If not found automatically
-
+If not found automatically 
+```bash
 set(subfvcore_DIR $HOME/.local/lib/cmake/subfvcore)
-    find_package subfvcore REQUIRED
+find_package subfvcore REQUIRED
+```
 
 ## Running Examples
 
-    Example 1 serial
+Example 1 serial
+```bash
+cd examples/example1/
+gmsh -3 example1.geo
+cd build/
+cmake ..
+make -j
+./example1
+```
 
-    cd examples/example1/
-    gmsh -3 example1.geo
-    cd build/
-    cmake ..
-    make -j
-    ./example1
+Example 2 Serial
+```bash
+cd examples/example2/
+gmsh -3 example2.geo
+cd build/
+cmake ..
+make -j
+./example2
+```
 
-    Example 2 Serial
-
-    cd examples/example2/
-    gmsh -3 example2.geo
-    cd build/
-    cmake ..
-    make -j
-    ./example2
-
-    Example 2 MPI
-
-    cd examples/example2/
-    gmsh -3 example2.geo
-    ../../tools/scripts/partition_mesh.sh example2.msh 4
-    cd build/
-    cmake ..
-    make -j
-    mpirun -np 4 ./example2
+Example 2 MPI
+```bash
+cd examples/example2/
+gmsh -3 example2.geo
+../../tools/scripts/partition_mesh.sh example2.msh 4
+cd build/
+cmake ..
+make -j
+mpirun -np 4 ./example2
+```
 
 ## Project Structure
 
@@ -123,31 +145,23 @@ Tools
 ## Module Overview
 
 Mesh modules
-    subfv_mesh_module
-    subfv_mesh_geometry module
-    subfv_mesh_connectivity module
-    subfv_mesh_reading module
+- subfv_mesh_module
+- subfv_mesh_geometry module
+- subfv_mesh_connectivity module
+- subfv_mesh_reading module
 
 Linear algebra modules
-    subfv_sparse_linear_module
-    subfv_sparse_csr_linear_module
-    subfv_sparse_bcsr_linear_module
-    subfv_linear_solver module
+-   subfv_sparse_linear_module
+-   subfv_sparse_csr_linear_module
+-   subfv_sparse_bcsr_linear_module
+-   subfv_linear_solver module
 
 MPI
-    subfv mpi_module
+-   subfv_mpi_module
 
 Utilities
-    subfv io_module
-    subfv precision_module
-
-## Cleaning Build
-
-    rm -rf build
-    mkdir build
-    cd build
-    cmake ..
-    make
+-   subfv_io_module
+-   subfv_precision_module
 
 ## Visualization
 

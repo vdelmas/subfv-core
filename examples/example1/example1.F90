@@ -1,11 +1,11 @@
 program example1
   use mpi
-  use precision_module
-  use mpi_module
-  use mesh_module
-  use mesh_reading_module
-  use mesh_geometry_module
-  use mesh_connectivity_module
+  use subfv_precision_module
+  use subfv_mpi_module
+  use subfv_mesh_module
+  use subfv_mesh_reading_module
+  use subfv_mesh_geometry_module
+  use subfv_mesh_connectivity_module
   implicit none
 
   integer(kind=ENTIER) :: me, num_procs, mpi_ierr
@@ -24,7 +24,7 @@ program example1
   integer(kind=ENTIER), dimension(:), allocatable :: n_faces_bc
   real(kind=DOUBLE), dimension(3) :: maxsumnorm, sumnorm, norm
 
-  meshfile_path=""
+  meshfile_path="../"
   meshfile="example1.msh"
 
   n_bc = 2
