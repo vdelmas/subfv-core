@@ -16,7 +16,6 @@ add_library(subfvcore
   src/mesh/subfv_mesh_geometry_module.F90
   src/mesh/subfv_mesh_connectivity_module.F90
 
-  src/linear_algebra/subfv_sparse_linear_module.F90
   src/linear_algebra/subfv_sparse_csr_linear_module.F90
   src/linear_algebra/subfv_sparse_bcsr_linear_module.F90
   src/linear_algebra/subfv_linear_solver_module.F90
