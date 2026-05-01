@@ -13,7 +13,7 @@ fi
 
 MESH=$1
 NPART=$2
-GMSH_BIN="$(dirname "$0")/../gmsh/gmsh"
+GMSH_BIN="$(dirname "$0")/../subfv-gmsh/subfv-gmsh"
 
 if [ ! -f "$GMSH_BIN" ]; then
     echo "Error: gmsh binary not found at $GMSH_BIN"
