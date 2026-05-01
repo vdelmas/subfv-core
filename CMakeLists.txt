@@ -21,24 +21,24 @@ add_library(subfvcore
   src/linear_algebra/subfv_linear_solver_module.F90
 
   src/io/subfv_io_module.F90
-)
+  )
 
 set_target_properties(subfvcore PROPERTIES
   Fortran_MODULE_DIRECTORY ${CMAKE_BINARY_DIR}/mod
-)
+  )
 
 target_link_libraries(subfvcore
   PUBLIC
   MPI::MPI_Fortran
   LAPACK::LAPACK
   BLAS::BLAS
-)
+  )
 
 target_include_directories(subfvcore
   PUBLIC
   $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/mod>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
-)
+  )
 
 include(GNUInstallDirs)
 
@@ -46,7 +46,7 @@ install(TARGETS subfvcore
   EXPORT subfvcore-targets
   ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
   LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-)
+  )
 
 # Installer les fichiers modules Fortran (.mod)
 install(DIRECTORY ${CMAKE_BINARY_DIR}/mod/
@@ -56,7 +56,13 @@ install(EXPORT subfvcore-targets
   FILE subfvcoreTargets.cmake
   NAMESPACE subfvcore::
   DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/subfvcore
-)
+  )
+
+#Installer subfv-gmsh
+install(PROGRAMS
+  ${CMAKE_CURRENT_SOURCE_DIR}/tools/subfv-gmsh/subfv-gmsh
+  DESTINATION ${CMAKE_INSTALL_BINDIR}
+  )
 
 include(CMakePackageConfigHelpers)
 
@@ -64,19 +70,19 @@ write_basic_package_version_file(
   "${CMAKE_CURRENT_BINARY_DIR}/subfvcoreConfigVersion.cmake"
   VERSION 1.0.0
   COMPATIBILITY AnyNewerVersion
-)
+  )
 
 configure_package_config_file(
   "${CMAKE_CURRENT_SOURCE_DIR}/cmake/subfvcoreConfig.cmake.in"
   "${CMAKE_CURRENT_BINARY_DIR}/subfvcoreConfig.cmake"
   INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/subfvcore
-)
+  )
 
 install(FILES
   "${CMAKE_CURRENT_BINARY_DIR}/subfvcoreConfig.cmake"
   "${CMAKE_CURRENT_BINARY_DIR}/subfvcoreConfigVersion.cmake"
   DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/subfvcore
-)
+  )
 
 # =========================
 # Examples
@@ -91,4 +97,4 @@ endif()
 # Installer les exemples
 install(DIRECTORY examples/
   DESTINATION ${CMAKE_INSTALL_DATADIR}/subfvcore/examples
-)
+  )
